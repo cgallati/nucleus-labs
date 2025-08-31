@@ -1,13 +1,27 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { PrintFileUpload } from '@/components/PrintFileUpload'
+
+interface UploadedFileData {
+  id: string
+  filename: string
+  filesize: number
+  status: string
+  title: string
+  customerEmail: string
+  description?: string
+  createdAt: string
+  analysisData?: Record<string, unknown>
+  securityScanResults?: Record<string, unknown>
+}
 
 export default function UploadTestPage() {
   const [uploadStatus, setUploadStatus] = useState<string>('')
-  const [lastUploadedFile, setLastUploadedFile] = useState<any>(null)
+  const [lastUploadedFile, setLastUploadedFile] = useState<UploadedFileData | null>(null)
 
-  const handleUploadComplete = (fileId: string, fileData: any) => {
+  const handleUploadComplete = (fileId: string, fileData: UploadedFileData) => {
     setUploadStatus('Upload successful!')
     setLastUploadedFile(fileData)
     console.log('Upload completed:', { fileId, fileData })
@@ -93,7 +107,7 @@ export default function UploadTestPage() {
             <li>• Check the browser console for detailed logs</li>
             <li>• Uploaded files are stored in the `/print-files` directory</li>
             <li>• File analysis and security scanning happen automatically after upload</li>
-            <li>• Admin panel: <a href="/admin" className="underline">/admin</a> to view uploaded files</li>
+            <li>• Admin panel: <Link href="/admin" className="underline">/admin</Link> to view uploaded files</li>
           </ul>
         </div>
       </div>

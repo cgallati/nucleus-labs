@@ -113,7 +113,7 @@ export const PrintFiles: CollectionConfig = {
       'model/gltf-binary', // GLB
       'application/json', // For JSON-based 3D formats
     ],
-    adminThumbnail: ({ doc }) => {
+    adminThumbnail: () => {
       // Since these are 3D files, we'll show a generic 3D file icon
       // Later we can implement 3D thumbnails or previews
       return '/api/print-files/thumbnail/3d-file-icon.png'
@@ -167,7 +167,8 @@ export const PrintFiles: CollectionConfig = {
                 req.payload.logger.warn(`No accessible file data. req.file.data type: ${typeof req.file.data}, size: ${req.file.data?.length || 'N/A'}, tempFilePath: ${req.file.tempFilePath}`)
               }
             } catch (readError) {
-              req.payload.logger.error(`Failed to read file data: ${readError.message}`)
+              const errorMessage = readError instanceof Error ? readError.message : 'Unknown error'
+              req.payload.logger.error(`Failed to read file data: ${errorMessage}`)
             }
             
             if (fileBuffer && fileBuffer.length > 0) {
@@ -193,7 +194,8 @@ export const PrintFiles: CollectionConfig = {
                 
               } catch (error) {
                 req.payload.logger.error(`Failed to analyze file ${req.file.name}:`, error)
-                data.analysisData = { error: 'Analysis failed', message: error.message }
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+                data.analysisData = { error: 'Analysis failed', message: errorMessage }
                 data.status = 'processing'
               }
             } else {

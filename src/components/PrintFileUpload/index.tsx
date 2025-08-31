@@ -6,8 +6,21 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
+interface UploadedFileData {
+  id: string
+  filename: string
+  filesize: number
+  status: string
+  title: string
+  customerEmail: string
+  description?: string
+  createdAt: string
+  analysisData?: Record<string, unknown>
+  securityScanResults?: Record<string, unknown>
+}
+
 interface FileUploadProps {
-  onUploadComplete?: (fileId: string, fileData: any) => void
+  onUploadComplete?: (fileId: string, fileData: UploadedFileData) => void
   onUploadError?: (error: string) => void
 }
 
@@ -227,7 +240,7 @@ export const PrintFileUpload: React.FC<FileUploadProps> = ({
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                We'll send your quote and updates to this email
+                We&apos;ll send your quote and updates to this email
               </p>
             </div>
 
@@ -273,7 +286,7 @@ export const PrintFileUpload: React.FC<FileUploadProps> = ({
           <div className="text-xs text-gray-500 space-y-1">
             <p><strong>Supported formats:</strong> STL, OBJ, 3MF, PLY, G-code, GLTF, GLB, DAE, FBX, X3D</p>
             <p><strong>Maximum size:</strong> 50MB per file</p>
-            <p><strong>What happens next:</strong> Your file will be analyzed for printability and you'll receive a quote within minutes</p>
+            <p><strong>What happens next:</strong> Your file will be analyzed for printability and you&apos;ll receive a quote within minutes</p>
           </div>
         </CardContent>
       </Card>
