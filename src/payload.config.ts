@@ -76,6 +76,7 @@ export default buildConfig({
           'media': true,
         },
         token: process.env.BLOB_READ_WRITE_TOKEN,
+        clientUploads: true, // Enable client-side uploads to bypass 4.5MB Vercel limit
       }),
     ] : []),
   ],
