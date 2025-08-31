@@ -1,5 +1,5 @@
-// storage-adapter-import-placeholder
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 
 import sharp from 'sharp' // sharp-import
 import path from 'path'
@@ -10,6 +10,7 @@ import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
+import { PrintFiles } from './collections/PrintFiles'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
@@ -62,15 +63,33 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  collections: [Pages, Posts, Media, Categories, Users],
+  collections: [Pages, Posts, Media, Categories, PrintFiles, Users],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer],
   plugins: [
     ...plugins,
-    // storage-adapter-placeholder
+    // Conditionally add Vercel Blob storage for production
+    ...(process.env.NODE_ENV === 'production' && process.env.BLOB_READ_WRITE_TOKEN ? [
+      vercelBlobStorage({
+        collections: {
+          'print-files': true,
+          'media': true,
+        },
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      }),
+    ] : []),
   ],
   secret: process.env.PAYLOAD_SECRET,
   sharp,
+  upload: {
+    limits: {
+      fileSize: 50000000, // 50MB for 3D print files
+    },
+    useTempFiles: true, // Use temp files for large uploads
+    createParentPath: true, // Auto-create directories
+    safeFileNames: true, // Strip unsafe characters
+    preserveExtension: 3, // Preserve file extensions
+  },
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },

@@ -10,6 +10,9 @@ node_modules
 # Payload default media upload directory
 public/media/
 
+# 3D print files upload directory (local development only)
+print-files/
+
 public/robots.txt
 public/sitemap*.xml
 

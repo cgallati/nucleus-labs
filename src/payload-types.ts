@@ -71,6 +71,7 @@ export interface Config {
     posts: Post;
     media: Media;
     categories: Category;
+    'print-files': PrintFile;
     users: User;
     redirects: Redirect;
     forms: Form;
@@ -87,6 +88,7 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    'print-files': PrintFilesSelect<false> | PrintFilesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
@@ -736,6 +738,88 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-files".
+ */
+export interface PrintFile {
+  id: string;
+  /**
+   * A descriptive name for this print file
+   */
+  title: string;
+  /**
+   * Optional description or notes about this print file
+   */
+  description?: string | null;
+  /**
+   * Customer email for order communication
+   */
+  customerEmail?: string | null;
+  /**
+   * Whether this was uploaded by a guest or registered user
+   */
+  isGuest?: boolean | null;
+  /**
+   * Current status of this print job
+   */
+  status?:
+    | (
+        | 'uploaded'
+        | 'processing'
+        | 'analyzed'
+        | 'quote-ready'
+        | 'approved'
+        | 'in-queue'
+        | 'printing'
+        | 'completed'
+        | 'rejected'
+      )
+    | null;
+  /**
+   * File analysis results (dimensions, volume, etc.)
+   */
+  analysisData?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Estimated cost in cents
+   */
+  estimatedCost?: number | null;
+  /**
+   * Estimated print time in minutes
+   */
+  estimatedPrintTime?: number | null;
+  /**
+   * Security scan results and virus check status
+   */
+  securityScanResults?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -922,6 +1006,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'categories';
         value: string | Category;
+      } | null)
+    | ({
+        relationTo: 'print-files';
+        value: string | PrintFile;
       } | null)
     | ({
         relationTo: 'users';
@@ -1267,6 +1355,32 @@ export interface CategoriesSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-files_select".
+ */
+export interface PrintFilesSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  customerEmail?: T;
+  isGuest?: T;
+  status?: T;
+  analysisData?: T;
+  estimatedCost?: T;
+  estimatedPrintTime?: T;
+  securityScanResults?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
