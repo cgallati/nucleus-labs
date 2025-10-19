@@ -42,3 +42,10 @@ next-env.d.ts
 public/media
 uploads/
 
+# IDE
+.idea/
+
+# Development docs and resources
+CLAUDE.md
+llm-resources/
+
