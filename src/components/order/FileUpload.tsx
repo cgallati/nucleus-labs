@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/utilities/cn'
 import { Button } from '@/components/ui/button'
+import { MaterialSelector } from '@/components/order/MaterialSelector'
 
 const ACCEPTED_FILE_TYPES = {
   'model/stl': ['.stl'],
@@ -21,6 +22,8 @@ interface UploadedFile {
   error?: string
   analysisStatus?: 'pending' | 'analyzing' | 'complete' | 'failed'
   estimatedCost?: number
+  material?: string
+  color?: string
 }
 
 export function FileUpload() {
@@ -268,6 +271,20 @@ export function FileUpload() {
   }, [])
 
   const hasSuccessfulUploads = uploadedFiles.some((f) => f.status === 'success')
+  const allFilesHaveMaterial = uploadedFiles
+    .filter((f) => f.status === 'success')
+    .every((f) => f.material && f.color)
+
+  const handleMaterialSelected = useCallback((fileId: string, material: string, color: string) => {
+    console.log('[FileUpload] Material selected for file:', fileId, material, color)
+    setUploadedFiles((prev) =>
+      prev.map((f) =>
+        f.id === fileId
+          ? { ...f, material, color }
+          : f,
+      ),
+    )
+  }, [])
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -338,111 +355,124 @@ export function FileUpload() {
       {uploadedFiles.length > 0 && (
         <div className="mt-8 space-y-4">
           <h3 className="text-[#505050] text-[19px] font-normal">Uploaded Files</h3>
-          <div className="space-y-3">
+          <div className="space-y-6">
             {uploadedFiles.map((uploadedFile) => (
-              <div
-                key={uploadedFile.id}
-                className="border-[1.9px] border-[#e7e7e7] rounded-[14px] p-6 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  {/* File Icon */}
-                  <div className="w-10 h-10 rounded-lg bg-[#f5f5f5] flex items-center justify-center">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#505050"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                    </svg>
-                  </div>
-
-                  <div className="flex-1">
-                    <p className="text-[#505050] text-[16px] font-normal">
-                      {uploadedFile.file.name}
-                    </p>
-                    <p className="text-[#a0a0a0] text-[14px]">
-                      {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                    {uploadedFile.status === 'analyzing' && (
-                      <p className="text-[#505050] text-[14px] mt-1">Analyzing file...</p>
-                    )}
-                    {uploadedFile.status === 'success' && uploadedFile.estimatedCost && (
-                      <p className="text-green-600 text-[14px] mt-1 font-medium">
-                        Estimated cost: ${uploadedFile.estimatedCost.toFixed(2)}
-                      </p>
-                    )}
-                    {uploadedFile.error && (
-                      <p className="text-red-500 text-[14px] mt-1">{uploadedFile.error}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Status Indicator */}
-                <div className="flex items-center gap-3">
-                  {(uploadedFile.status === 'uploading' || uploadedFile.status === 'analyzing') && (
-                    <div className="w-5 h-5 border-2 border-[#3a3a3a] border-t-transparent rounded-full animate-spin" />
-                  )}
-                  {uploadedFile.status === 'success' && (
-                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+              <div key={uploadedFile.id} className="space-y-4">
+                {/* File Info Card */}
+                <div className="border-[1.9px] border-[#e7e7e7] rounded-[14px] p-6 flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* File Icon */}
+                    <div className="w-10 h-10 rounded-lg bg-[#f5f5f5] flex items-center justify-center">
                       <svg
-                        width="12"
-                        height="12"
+                        width="20"
+                        height="20"
                         viewBox="0 0 24 24"
                         fill="none"
-                        stroke="white"
-                        strokeWidth="3"
+                        stroke="#505050"
+                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        <polyline points="20 6 9 17 4 12" />
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
                       </svg>
                     </div>
-                  )}
-                  {uploadedFile.status === 'error' && (
-                    <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+
+                    <div className="flex-1">
+                      <p className="text-[#505050] text-[16px] font-normal">
+                        {uploadedFile.file.name}
+                      </p>
+                      <p className="text-[#a0a0a0] text-[14px]">
+                        {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                      {uploadedFile.status === 'analyzing' && (
+                        <p className="text-[#505050] text-[14px] mt-1">Analyzing file...</p>
+                      )}
+                      {uploadedFile.status === 'success' && uploadedFile.estimatedCost && (
+                        <p className="text-green-600 text-[14px] mt-1 font-medium">
+                          Estimated cost: ${uploadedFile.estimatedCost.toFixed(2)}
+                        </p>
+                      )}
+                      {uploadedFile.material && uploadedFile.color && (
+                        <p className="text-[#505050] text-[14px] mt-1">
+                          {uploadedFile.material} - {uploadedFile.color}
+                        </p>
+                      )}
+                      {uploadedFile.error && (
+                        <p className="text-red-500 text-[14px] mt-1">{uploadedFile.error}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Status Indicator */}
+                  <div className="flex items-center gap-3">
+                    {(uploadedFile.status === 'uploading' || uploadedFile.status === 'analyzing') && (
+                      <div className="w-5 h-5 border-2 border-[#3a3a3a] border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {uploadedFile.status === 'success' && (
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </div>
+                    )}
+                    {uploadedFile.status === 'error' && (
+                      <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* Remove Button */}
+                    <button
+                      onClick={() => handleRemoveFile(uploadedFile.id)}
+                      className="text-[#a0a0a0] hover:text-[#505050] transition-colors"
+                      aria-label="Remove file"
+                    >
                       <svg
-                        width="12"
-                        height="12"
+                        width="20"
+                        height="20"
                         viewBox="0 0 24 24"
                         fill="none"
-                        stroke="white"
-                        strokeWidth="3"
+                        stroke="currentColor"
+                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
-                    </div>
-                  )}
-
-                  {/* Remove Button */}
-                  <button
-                    onClick={() => handleRemoveFile(uploadedFile.id)}
-                    className="text-[#a0a0a0] hover:text-[#505050] transition-colors"
-                    aria-label="Remove file"
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Material Selector - show after successful analysis */}
+                {uploadedFile.status === 'success' && !uploadedFile.material && (
+                  <MaterialSelector
+                    fileId={uploadedFile.id}
+                    onSelectionComplete={(material, color) => handleMaterialSelected(uploadedFile.id, material, color)}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -459,11 +489,11 @@ export function FileUpload() {
           Back
         </Button>
         <Button
-          disabled={!hasSuccessfulUploads || isUploading}
-          onClick={() => router.push('/new-order/material')}
+          disabled={!hasSuccessfulUploads || isUploading || !allFilesHaveMaterial}
+          onClick={() => router.push('/checkout')}
           className="bg-[#3a3a3a] hover:bg-[#505050] text-white rounded-[9px] px-8 h-[42px] text-[16px] font-normal disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Next
+          Continue to Checkout
         </Button>
       </div>
     </div>

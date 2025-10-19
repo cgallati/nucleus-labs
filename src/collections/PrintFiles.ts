@@ -94,6 +94,20 @@ export const PrintFiles: CollectionConfig = {
       },
     },
     {
+      name: 'material',
+      type: 'text',
+      admin: {
+        description: 'Selected material (e.g., "PLA Basic")',
+      },
+    },
+    {
+      name: 'color',
+      type: 'text',
+      admin: {
+        description: 'Selected color name (e.g., "Red")',
+      },
+    },
+    {
       name: 'scanStatus',
       type: 'select',
       required: true,

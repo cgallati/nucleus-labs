@@ -1041,6 +1041,14 @@ export interface PrintFile {
   fileSize: number;
   fileType: 'stl' | '3mf' | 'obj';
   /**
+   * Selected material (e.g., "PLA Basic")
+   */
+  material?: string | null;
+  /**
+   * Selected color name (e.g., "Red")
+   */
+  color?: string | null;
+  /**
    * Security scan status
    */
   scanStatus: 'pending' | 'scanning' | 'clean' | 'threat';
@@ -1560,6 +1568,8 @@ export interface PrintFilesSelect<T extends boolean = true> {
   user?: T;
   fileSize?: T;
   fileType?: T;
+  material?: T;
+  color?: T;
   scanStatus?: T;
   analysisStatus?: T;
   estimatedCost?: T;
@@ -2116,6 +2126,53 @@ export interface PrintSetting {
    */
   minimumCharge: number;
   /**
+   * Filament materials available for printing
+   */
+  materials?:
+    | {
+        /**
+         * Material name (e.g., "PLA Basic")
+         */
+        name: string;
+        /**
+         * Material type
+         */
+        type: 'pla' | 'abs' | 'petg' | 'tpu' | 'asa' | 'nylon';
+        /**
+         * Material density in g/cm³
+         */
+        density: number;
+        /**
+         * Cost per kilogram in USD (for cost calculation)
+         */
+        costPerKg: number;
+        colors: {
+          /**
+           * Color name (e.g., "Red", "Black")
+           */
+          name: string;
+          /**
+           * Manufacturer SKU (e.g., "10200")
+           */
+          sku?: string | null;
+          /**
+           * Hex color code for display (e.g., "#FF0000")
+           */
+          hexCode?: string | null;
+          /**
+           * Is this color currently in stock?
+           */
+          inStock?: boolean | null;
+          id?: string | null;
+        }[];
+        /**
+         * Enable this material for customer selection
+         */
+        enabled?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Automatically analyze files on upload
    */
   enableAutomaticAnalysis?: boolean | null;
@@ -2197,6 +2254,25 @@ export interface PrintSettingsSelect<T extends boolean = true> {
   pricePerGram?: T;
   hourlyMachineRate?: T;
   minimumCharge?: T;
+  materials?:
+    | T
+    | {
+        name?: T;
+        type?: T;
+        density?: T;
+        costPerKg?: T;
+        colors?:
+          | T
+          | {
+              name?: T;
+              sku?: T;
+              hexCode?: T;
+              inStock?: T;
+              id?: T;
+            };
+        enabled?: T;
+        id?: T;
+      };
   enableAutomaticAnalysis?: T;
   rejectOversizedFiles?: T;
   maxFileSize?: T;

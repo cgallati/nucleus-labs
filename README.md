@@ -428,6 +428,56 @@ After initial setup, configure print settings at `/admin/globals/print-settings`
 3. Fine-tune print settings for your typical jobs
 4. Enable/disable automatic analysis as needed
 
+### Phase 3: Materials & Color Selection (In Progress)
+
+Material and color selection system with inventory tracking:
+
+#### Features Implemented:
+
+**Materials Management** (`/admin/globals/print-settings` → Materials & Colors tab):
+- Configurable material types (PLA, ABS, PETG, TPU, ASA, Nylon)
+- Per-material properties:
+  - Material name (e.g., "PLA Basic")
+  - Density (g/cm³) for accurate cost calculation
+  - Cost per kilogram for pricing
+  - Available color options with SKU tracking
+  - Stock status per color
+  - Material enable/disable toggle
+
+**Color Configuration**:
+- Color name and SKU (manufacturer part number)
+- Hex color code for UI display
+- In-stock toggle for availability
+- Visual color picker in admin panel
+
+#### Initial Setup:
+
+Run the materials seed script to populate your initial inventory:
+
+```bash
+pnpm seed:materials
+```
+
+This will add the default PLA Basic materials with colors:
+- Red (SKU: 10200)
+- Pumpkin Orange (SKU: 10301)
+- Black (SKU: 10101)
+- Gray (SKU: 10103)
+- Jade White (SKU: 10100)
+
+#### Managing Materials:
+
+1. Navigate to `/admin/globals/print-settings`
+2. Select the "Materials & Colors" tab
+3. Add new materials or edit existing ones
+4. Configure colors and stock status
+5. Set material-specific pricing (cost per kg)
+
+**Cost Calculation Updates**:
+- Material density now pulled from selected material
+- Cost per gram calculated from material's cost per kg
+- Different materials can have different pricing structures
+
 ### Debugging & Logging
 
 Comprehensive logging has been implemented throughout the upload and analysis pipeline to help diagnose issues:

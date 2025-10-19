@@ -151,6 +151,111 @@ export const PrintSettings: GlobalConfig = {
           ],
         },
         {
+          label: 'Materials & Colors',
+          fields: [
+            {
+              name: 'materials',
+              type: 'array',
+              label: 'Available Materials',
+              admin: {
+                description: 'Filament materials available for printing',
+              },
+              fields: [
+                {
+                  name: 'name',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    description: 'Material name (e.g., "PLA Basic")',
+                  },
+                },
+                {
+                  name: 'type',
+                  type: 'select',
+                  required: true,
+                  options: [
+                    { label: 'PLA', value: 'pla' },
+                    { label: 'ABS', value: 'abs' },
+                    { label: 'PETG', value: 'petg' },
+                    { label: 'TPU', value: 'tpu' },
+                    { label: 'ASA', value: 'asa' },
+                    { label: 'Nylon', value: 'nylon' },
+                  ],
+                  admin: {
+                    description: 'Material type',
+                  },
+                },
+                {
+                  name: 'density',
+                  type: 'number',
+                  required: true,
+                  defaultValue: 1.24,
+                  admin: {
+                    description: 'Material density in g/cm³',
+                    step: 0.01,
+                  },
+                },
+                {
+                  name: 'costPerKg',
+                  type: 'number',
+                  required: true,
+                  admin: {
+                    description: 'Cost per kilogram in USD (for cost calculation)',
+                    step: 0.01,
+                  },
+                },
+                {
+                  name: 'colors',
+                  type: 'array',
+                  label: 'Available Colors',
+                  required: true,
+                  fields: [
+                    {
+                      name: 'name',
+                      type: 'text',
+                      required: true,
+                      admin: {
+                        description: 'Color name (e.g., "Red", "Black")',
+                      },
+                    },
+                    {
+                      name: 'sku',
+                      type: 'text',
+                      admin: {
+                        description: 'Manufacturer SKU (e.g., "10200")',
+                      },
+                    },
+                    {
+                      name: 'hexCode',
+                      type: 'text',
+                      admin: {
+                        description: 'Hex color code for display (e.g., "#FF0000")',
+                        placeholder: '#000000',
+                      },
+                    },
+                    {
+                      name: 'inStock',
+                      type: 'checkbox',
+                      defaultValue: true,
+                      admin: {
+                        description: 'Is this color currently in stock?',
+                      },
+                    },
+                  ],
+                },
+                {
+                  name: 'enabled',
+                  type: 'checkbox',
+                  defaultValue: true,
+                  admin: {
+                    description: 'Enable this material for customer selection',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
           label: 'Analysis Settings',
           fields: [
             {
