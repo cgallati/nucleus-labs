@@ -16,13 +16,14 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "reinstall": "cross-env NODE_OPTIONS=--no-deprecation rm -rf node_modules && rm pnpm-lock.yaml && pnpm --ignore-workspace install",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "stripe-webhooks": "stripe listen --forward-to localhost:3000/api/stripe/webhooks",
+    "stripe-webhooks": "stripe listen --forward-to localhost:3000/api/payments/stripe/webhooks",
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" pnpm exec playwright test",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
     "@payloadcms/admin-bar": "3.59.1",
+    "@payloadcms/db-mongodb": "^3.59.1",
     "@payloadcms/email-nodemailer": "3.59.1",
     "@payloadcms/live-preview-react": "3.59.1",
     "@payloadcms/next": "3.59.1",
@@ -53,6 +54,7 @@
     "lucide-react": "^0.477.0",
     "next": "^15.5.4",
     "next-themes": "0.4.6",
+    "node-stl": "^0.7.3",
     "payload": "3.59.1",
     "prism-react-renderer": "^2.3.1",
     "qs-esm": "^7",
@@ -63,8 +65,7 @@
     "sonner": "^1.7.2",
     "stripe": "18.5.0",
     "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7",
-    "@payloadcms/db-d1-sqlite": "3.59.1"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

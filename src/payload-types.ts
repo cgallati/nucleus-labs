@@ -76,6 +76,7 @@ export interface Config {
     pages: Page;
     categories: Category;
     media: Media;
+    'print-files': PrintFile;
     forms: Form;
     'form-submissions': FormSubmission;
     addresses: Address;
@@ -86,6 +87,7 @@ export interface Config {
     carts: Cart;
     orders: Order;
     transactions: Transaction;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -108,6 +110,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'print-files': PrintFilesSelect<false> | PrintFilesSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
@@ -118,6 +121,7 @@ export interface Config {
     carts: CartsSelect<false> | CartsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -128,17 +132,25 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    'print-settings': PrintSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    'print-settings': PrintSettingsSelect<false> | PrintSettingsSelect<true>;
   };
   locale: null;
   user: User & {
     collection: 'users';
   };
   jobs: {
-    tasks: unknown;
+    tasks: {
+      analyzeFile: TaskAnalyzeFile;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
   /**
@@ -1015,6 +1027,82 @@ export interface Address {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-files".
+ */
+export interface PrintFile {
+  id: string;
+  /**
+   * User who uploaded this file (empty for guest uploads)
+   */
+  user?: (string | null) | User;
+  /**
+   * File size in bytes
+   */
+  fileSize: number;
+  fileType: 'stl' | '3mf' | 'obj';
+  /**
+   * Security scan status
+   */
+  scanStatus: 'pending' | 'scanning' | 'clean' | 'threat';
+  /**
+   * 3D file analysis status
+   */
+  analysisStatus: 'pending' | 'analyzing' | 'complete' | 'failed';
+  /**
+   * Estimated cost in USD
+   */
+  estimatedCost?: number | null;
+  analysis?: {
+    /**
+     * Volume in cubic millimeters
+     */
+    volume?: number | null;
+    /**
+     * Surface area in square millimeters
+     */
+    surfaceArea?: number | null;
+    boundingBox?: {
+      /**
+       * Width in mm
+       */
+      x?: number | null;
+      /**
+       * Depth in mm
+       */
+      y?: number | null;
+      /**
+       * Height in mm
+       */
+      z?: number | null;
+    };
+    /**
+     * Estimated print time in minutes
+     */
+    estimatedPrintTime?: number | null;
+    /**
+     * Number of triangles in mesh
+     */
+    triangleCount?: number | null;
+  };
+  /**
+   * Associated order (if any)
+   */
+  order?: (string | null) | Order;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename: string;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {};
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "form-submissions".
  */
 export interface FormSubmission {
@@ -1027,6 +1115,98 @@ export interface FormSubmission {
         id?: string | null;
       }[]
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: string;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'analyzeFile';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'analyzeFile') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1052,6 +1232,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'print-files';
+        value: string | PrintFile;
       } | null)
     | ({
         relationTo: 'forms';
@@ -1092,6 +1276,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transactions';
         value: string | Transaction;
+      } | null)
+    | ({
+        relationTo: 'payload-jobs';
+        value: string | PayloadJob;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1363,6 +1551,46 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-files_select".
+ */
+export interface PrintFilesSelect<T extends boolean = true> {
+  user?: T;
+  fileSize?: T;
+  fileType?: T;
+  scanStatus?: T;
+  analysisStatus?: T;
+  estimatedCost?: T;
+  analysis?:
+    | T
+    | {
+        volume?: T;
+        surfaceArea?: T;
+        boundingBox?:
+          | T
+          | {
+              x?: T;
+              y?: T;
+              z?: T;
+            };
+        estimatedPrintTime?: T;
+        triangleCount?: T;
+      };
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?: T | {};
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1722,6 +1950,37 @@ export interface TransactionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -1802,6 +2061,77 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-settings".
+ */
+export interface PrintSetting {
+  id: string;
+  /**
+   * Current 3D printer model
+   */
+  printerModel?: string | null;
+  buildVolume: {
+    /**
+     * Maximum width in millimeters
+     */
+    x: number;
+    /**
+     * Maximum depth in millimeters
+     */
+    y: number;
+    /**
+     * Maximum height in millimeters
+     */
+    z: number;
+  };
+  /**
+   * Default layer height in mm (0.1, 0.2, 0.3)
+   */
+  defaultLayerHeight: number;
+  /**
+   * Default infill percentage (0-100%)
+   */
+  defaultInfill: number;
+  /**
+   * Print speed in mm/s
+   */
+  printSpeed: number;
+  /**
+   * PLA density in g/cm³ (1.24 for PLA)
+   */
+  materialDensity: number;
+  /**
+   * Base fee per order in USD
+   */
+  baseOrderFee: number;
+  /**
+   * Price per gram of filament in USD
+   */
+  pricePerGram: number;
+  /**
+   * Machine operation cost per hour in USD
+   */
+  hourlyMachineRate: number;
+  /**
+   * Minimum total charge per print in USD
+   */
+  minimumCharge: number;
+  /**
+   * Automatically analyze files on upload
+   */
+  enableAutomaticAnalysis?: boolean | null;
+  /**
+   * Reject files that exceed build volume
+   */
+  rejectOversizedFiles?: boolean | null;
+  /**
+   * Maximum file size in MB
+   */
+  maxFileSize: number;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -1845,6 +2175,46 @@ export interface FooterSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-settings_select".
+ */
+export interface PrintSettingsSelect<T extends boolean = true> {
+  printerModel?: T;
+  buildVolume?:
+    | T
+    | {
+        x?: T;
+        y?: T;
+        z?: T;
+      };
+  defaultLayerHeight?: T;
+  defaultInfill?: T;
+  printSpeed?: T;
+  materialDensity?: T;
+  baseOrderFee?: T;
+  pricePerGram?: T;
+  hourlyMachineRate?: T;
+  minimumCharge?: T;
+  enableAutomaticAnalysis?: T;
+  rejectOversizedFiles?: T;
+  maxFileSize?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskAnalyzeFile".
+ */
+export interface TaskAnalyzeFile {
+  input: {
+    fileId: string;
+    filePath: string;
+    fileType: 'stl' | '3mf' | 'obj';
+  };
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

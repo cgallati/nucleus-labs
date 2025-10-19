@@ -1,5 +1,5 @@
 // storage-adapter-import-placeholder
-import { sqliteD1Adapter } from '@payloadcms/db-d1-sqlite'
+import { mongooseAdapter } from '@payloadcms/db-mongodb'
 
 import {
   BoldFeature,
@@ -19,10 +19,13 @@ import { fileURLToPath } from 'url'
 import { Categories } from '@/collections/Categories'
 import { Media } from '@/collections/Media'
 import { Pages } from '@/collections/Pages'
+import { PrintFiles } from '@/collections/PrintFiles'
 import { Users } from '@/collections/Users'
 import { Footer } from '@/globals/Footer'
 import { Header } from '@/globals/Header'
+import { PrintSettings } from '@/globals/PrintSettings'
 import { plugins } from './plugins'
+import { analyzeFileJob } from './jobs/analyzeFile'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -39,8 +42,10 @@ export default buildConfig({
     },
     user: Users.slug,
   },
-  collections: [Users, Pages, Categories, Media],
-db: sqliteD1Adapter({ binding: cloudflare.env.D1 }),
+  collections: [Users, Pages, Categories, Media, PrintFiles],
+  db: mongooseAdapter({
+    url: process.env.DATABASE_URI || '',
+  }),
   editor: lexicalEditor({
     features: () => {
       return [
@@ -78,7 +83,46 @@ db: sqliteD1Adapter({ binding: cloudflare.env.D1 }),
   }),
   //email: nodemailerAdapter(),
   endpoints: [],
-  globals: [Header, Footer],
+  globals: [Header, Footer, PrintSettings],
+  jobs: {
+    tasks: [
+      {
+        slug: 'analyzeFile',
+        handler: analyzeFileJob,
+        inputSchema: [
+          {
+            name: 'fileId',
+            type: 'text',
+            required: true,
+          },
+          {
+            name: 'filePath',
+            type: 'text',
+            required: true,
+          },
+          {
+            name: 'fileType',
+            type: 'select',
+            required: true,
+            options: [
+              { label: 'STL', value: 'stl' },
+              { label: '3MF', value: '3mf' },
+              { label: 'OBJ', value: 'obj' },
+            ],
+          },
+        ],
+      },
+    ],
+    // Auto-run jobs every 5 seconds in development
+    autoRun: [
+      {
+        cron: '*/5 * * * * *', // Every 5 seconds
+        limit: 10,
+        queue: 'default',
+      },
+    ],
+    workflows: [],
+  },
   plugins: [
     ...plugins,
     // storage-adapter-placeholder

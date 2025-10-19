@@ -82,6 +82,44 @@ export const plugins: Plugin[] = [
           secretKey: process.env.STRIPE_SECRET_KEY!,
           publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
           webhookSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET!,
+          webhooks: {
+            'payment_intent.succeeded': ({ event, req, stripe }) => {
+              console.log('[Stripe Webhook] payment_intent.succeeded:', {
+                id: event.id,
+                paymentIntentId: event.data.object.id,
+                amount: event.data.object.amount,
+                currency: event.data.object.currency,
+              })
+              req.payload.logger.info('Payment intent succeeded')
+            },
+            'payment_intent.created': ({ event, req }) => {
+              console.log('[Stripe Webhook] payment_intent.created:', {
+                id: event.id,
+                paymentIntentId: event.data.object.id,
+              })
+            },
+            'charge.succeeded': ({ event, req }) => {
+              console.log('[Stripe Webhook] charge.succeeded:', {
+                id: event.id,
+                chargeId: event.data.object.id,
+                amount: event.data.object.amount,
+              })
+            },
+            'charge.updated': ({ event, req }) => {
+              console.log('[Stripe Webhook] charge.updated:', {
+                id: event.id,
+                chargeId: event.data.object.id,
+              })
+            },
+            'checkout.session.completed': ({ event, req }) => {
+              console.log('[Stripe Webhook] checkout.session.completed:', {
+                id: event.id,
+                sessionId: event.data.object.id,
+                customerId: event.data.object.customer,
+              })
+              req.payload.logger.info('Checkout session completed')
+            },
+          },
         }),
       ],
     },

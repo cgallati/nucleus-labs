@@ -1,10 +1,10 @@
-# Payload Ecommerce Template
+# Nucleus Labs 3D Printing Platform
 
-This template is in **BETA**.
+A professional 3D printing service platform built on Payload CMS and Next.js 15, designed for Nucleus Labs in Savannah, GA.
 
-This is the official [Payload Ecommerce Template](https://github.com/payloadcms/payload/blob/main/templates/ecommerce). This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready ecommerce website.
+## Overview
 
-This template is right for you if you are working on building an ecommerce project or shop with Payload.
+This platform facilitates a complete 3D printing workflow from file upload to payment processing, serving SCAD students and the public with Bambu Labs X1C printing services.
 
 Core features:
 
@@ -29,6 +29,27 @@ Core features:
 - [Automated Tests](#tests)
 
 ## Quick Start
+
+### Prerequisites
+
+- Node.js 18.20.2+ or 20.9.0+
+- MongoDB Atlas account (free tier available at https://www.mongodb.com/cloud/atlas)
+
+### Environment Setup
+
+1. Copy `.env.example` to `.env`: `cp .env.example .env`
+2. Update the following variables in `.env`:
+   - `PAYLOAD_SECRET`: Generate a secure random string (32+ characters). **Use different secrets for dev/staging/production**
+   - `DATABASE_URI`: Replace `<db_password>` with your MongoDB Atlas password
+   - For development, the database name is `nucleus-labs-dev`
+   - For production, change it to `nucleus-labs-prod`
+
+**Important Security Notes:**
+- Never commit `.env` files to git (already protected in `.gitignore`)
+- Use different `PAYLOAD_SECRET` values for each environment
+- MongoDB credentials should be stored securely (use Vercel environment variables in production)
+
+### Local Development
 
 To spin up this example locally, follow these steps:
 
@@ -82,6 +103,21 @@ See the [Collections](https://payloadcms.com/docs/configuration/collections) doc
 - #### Media
 
   This is the uploads enabled collection used by pages, posts, and projects to contain media like images, videos, downloads, and other assets. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
+
+- #### Print Files
+
+  **NEW**: Specialized collection for managing 3D print files (STL, 3MF, OBJ). Features:
+  - Secure file upload with validation
+  - File size tracking and metadata
+  - Security scan status tracking
+  - 3D file analysis fields (volume, surface area, bounding box, print time estimation)
+  - User-specific access control
+  - Order association
+
+  Access Control:
+  - Customers can only view/manage their own files
+  - Admins have full access to all files
+  - Files stored locally in development, Vercel Blob in production
 
 - #### Categories
 
@@ -193,6 +229,63 @@ By default the template ships with support only for USD however you can change t
 
 By default we ship with the Stripe adapter configured, so you'll need to setup the `secretKey`, `publishableKey` and `webhookSecret` from your Stripe dashboard. Follow [Stripe's guide](https://docs.stripe.com/get-started/api-request?locale=en-GB) on how to set this up.
 
+### Stripe Webhook Configuration
+
+**Local Development:**
+
+1. Install the Stripe CLI: https://stripe.com/docs/stripe-cli
+2. Run the webhook forwarder:
+   ```bash
+   pnpm stripe-webhooks
+   ```
+   This forwards webhooks to: `http://localhost:3000/api/payments/stripe/webhooks`
+
+3. The CLI will output a webhook signing secret (starts with `whsec_`)
+4. Copy it to your `.env` file:
+   ```
+   STRIPE_WEBHOOKS_SIGNING_SECRET=whsec_...
+   ```
+
+**Testing the Webhook Endpoint:**
+
+The ecommerce plugin automatically creates the webhook endpoint at `/api/payments/stripe/webhooks`.
+
+1. Trigger a test webhook from Stripe CLI:
+   ```bash
+   stripe trigger payment_intent.succeeded
+   ```
+
+2. The endpoint automatically returns `{ "received": true }` with status 200 on success, or 400 on error
+
+**Production Setup:**
+
+1. Go to [Stripe Dashboard > Webhooks](https://dashboard.stripe.com/webhooks)
+2. Add endpoint: `https://your-domain.com/api/payments/stripe/webhooks`
+3. Select events to receive (or "receive all events")
+4. Copy the webhook signing secret
+5. Add to production environment variables as `STRIPE_WEBHOOKS_SIGNING_SECRET`
+
+**Adding Custom Webhook Handlers:**
+
+You can add custom webhook handlers in your Stripe adapter config (`src/plugins/index.ts`):
+
+```typescript
+stripeAdapter({
+  secretKey: process.env.STRIPE_SECRET_KEY!,
+  publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+  webhookSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET!,
+  webhooks: {
+    'payment_intent.succeeded': ({ event, req, stripe }) => {
+      console.log('Payment succeeded:', event.data.object.id)
+      req.payload.logger.info('Payment succeeded')
+    },
+    'checkout.session.completed': ({ event, req, stripe }) => {
+      console.log('Checkout completed:', event.data.object.id)
+    },
+  },
+})
+```
+
 ## Tests
 
 We provide automated tests out of the box for both E2E and Int tests along with this template. They are being run in our CI to ensure the stability of this template over time. You can integrate them into your CI or run them locally as well via:
@@ -223,6 +316,211 @@ We have configured [Scheduled Publish](https://payloadcms.com/docs/versions/draf
 
 > Note: When deployed on Vercel, depending on the plan tier, you may be limited to daily cron only.
 
+## Implementation Status
+
+### Phase 1: File Upload System (Completed)
+
+The first phase of the Nucleus Labs platform has been implemented with the following features:
+
+### New Order Flow
+
+A multi-step order process accessible at `/new-order`:
+
+1. **File Upload** (Phase 1 - Completed)
+2. **Material Selection** (Coming in Phase 3)
+3. **Color Selection** (Coming in Phase 3)
+4. **Checkout** (Coming in Phase 3)
+
+### Components
+
+#### OrderStepper (`src/components/order/OrderStepper.tsx`)
+A visual progress indicator matching the Figma design:
+- Clean, minimal styling with #3a3a3a primary color
+- Step indicators with connecting lines
+- Active/completed/upcoming states
+- Responsive layout
+
+#### FileUpload (`src/components/order/FileUpload.tsx`)
+Professional drag-and-drop file upload interface:
+- Supports STL, 3MF, and OBJ files up to 100MB
+- Drag-and-drop zone with visual feedback
+- File validation and error handling
+- Upload progress indicators
+- Success/error status display
+- Integration with Payload CMS PrintFiles collection
+
+### API Routes
+
+#### `/api/upload-print-file` (POST)
+Handles 3D print file uploads:
+- User authentication required
+- File type validation (STL, 3MF, OBJ)
+- File size validation (100MB max)
+- Creates PrintFiles collection record
+- Prepares for future security scanning and file analysis
+
+### File Storage
+
+- **Development**: Local file storage in `uploads/print-files/`
+- **Production**: Ready for Vercel Blob storage integration
+
+### Usage
+
+To test the file upload feature:
+
+1. Start the dev server: `pnpm dev`
+2. Create an account or log in at `/login`
+3. Navigate to `/new-order`
+4. Upload 3D print files via drag-and-drop or file picker
+5. Files are validated, uploaded, and tracked in the PrintFiles collection
+6. View uploaded files in the Payload admin at `/admin/collections/print-files`
+
+### Phase 2: 3D File Analysis & Cost Estimation (Completed)
+
+Automatic analysis of uploaded 3D files with real-time cost calculations:
+
+#### Features Implemented:
+
+**Print Settings Global** (`/admin/globals/print-settings`):
+- Configurable printer specifications (Bambu X1C build volume: 256×256×256mm)
+- Adjustable print settings (layer height, infill %, print speed)
+- Material density configuration (default: PLA at 1.24 g/cm³)
+- Pricing controls:
+  - Base order fee
+  - Price per gram of filament
+  - Hourly machine rate
+  - Minimum charge per print
+- Analysis options (enable/disable automatic analysis, reject oversized files)
+
+**File Analysis Engine**:
+- STL file parsing using `node-stl` library
+- Extracts:
+  - Volume (mm³) for material cost calculation
+  - Surface area (mm²) for support estimation
+  - Bounding box dimensions (X, Y, Z in mm)
+  - Triangle count for mesh quality
+- Validates files fit within build volume (256×256×256mm)
+- Clear error messaging for oversized files
+
+**Cost Calculation**:
+- Material cost: `volume × density × price_per_gram`
+- Time cost: `estimated_hours × hourly_rate`
+- Total: `base_fee + material_cost + time_cost` (minimum charge applied)
+- Real-time estimation displayed in upload UI
+
+**Background Processing**:
+- Uses Payload Jobs Queue for async analysis
+- Status tracking: pending → analyzing → complete/failed
+- Automatic polling for analysis results
+- Results stored in PrintFiles collection
+
+**User Experience**:
+- Upload shows instant feedback
+- Real-time "Analyzing file..." indicator with spinner
+- Displays estimated cost once analysis completes
+- Clear error messages for build volume violations
+
+#### Admin Configuration:
+
+After initial setup, configure print settings at `/admin/globals/print-settings`:
+1. Verify printer specifications match your Bambu X1C
+2. Adjust pricing based on your market rates
+3. Fine-tune print settings for your typical jobs
+4. Enable/disable automatic analysis as needed
+
+### Debugging & Logging
+
+Comprehensive logging has been implemented throughout the upload and analysis pipeline to help diagnose issues:
+
+**Log Prefixes:**
+- `[Upload API]` - File upload endpoint (`/api/upload-print-file`)
+- `[Analysis Job]` - Background job processing (`src/jobs/analyzeFile.ts`)
+- `[STL Parser]` - STL file parsing operations
+- `[FileUpload]` - Frontend upload component
+- `[Print Files API]` - Status polling endpoint
+
+**What's Logged:**
+
+1. **Upload Flow:**
+   - File received, size, and type
+   - Validation results
+   - Buffer creation and database operations
+   - Job queue status
+   - Total upload duration
+
+2. **Analysis Flow:**
+   - Job start time and parameters
+   - Status updates (pending → analyzing → complete/failed)
+   - File parsing progress
+   - Volume and triangle count
+   - Build volume constraint checks
+   - Cost calculation breakdown
+   - Analysis completion time
+
+3. **Frontend Flow:**
+   - File handling and local ID assignment
+   - Upload requests and responses
+   - Polling attempts and responses
+   - Status updates
+   - File removal operations
+
+**Monitoring Analysis:**
+
+When a file upload seems to hang:
+1. Check browser console for `[FileUpload]` logs
+2. Check server logs for `[Upload API]` and `[Analysis Job]` logs
+3. Look for error messages or stack traces
+4. Verify the analysis job was queued successfully
+5. Check if the file exists at the logged file path
+
+**Common Issues:**
+- File path incorrect (check `[Analysis Job]` logs for file not found errors)
+- STL parsing errors (check `[STL Parser]` logs)
+- Database connection issues (check Payload initialization logs)
+- Job queue not processing (verify Payload jobs configuration)
+
+**File Replacement:**
+Files can be canceled and replaced during upload. The frontend properly:
+- Assigns unique IDs to prevent conflicts
+- Updates from local to server IDs after upload
+- Removes files from the list when canceled
+- Supports multiple file uploads and removals
+
+## Future Enhancements
+
+The following features are planned for future implementation:
+
+### Phase 2 Enhancements (Future):
+- **Complexity Factors**: Thin wall detection, overhang analysis, support material requirements
+- **Advanced 3MF Support**: Full 3MF parsing with embedded print settings using lib3mf
+- **OBJ File Support**: Complete OBJ parser for Wavefront OBJ files
+- **Multi-Part Files**: Handle files with multiple objects/components
+- **Orientation Optimization**: Suggest optimal print orientations
+- **Support Material Calculation**: Accurate support material cost estimation
+
+### Phase 3: Enhanced Checkout (Upcoming):
+- Material selection (PLA colors)
+- Color selection per material type
+- Multi-page checkout flow with animations
+- Post-print payment completion with optional tips
+
+### Phase 4: User Experience (Planned):
+- Main landing page with prominent file upload drop zone
+- Responsive design optimizations for mobile devices
+- Enhanced order tracking interface
+
+### Phase 5: Business Operations (Planned):
+- SMS notifications for new orders
+- Order analytics and reporting dashboard
+- Customer communication system
+- Status update automation
+
+### Configuration Reminders:
+- **Material Densities**: Update when adding new filament types (ABS: 1.04 g/cm³, PETG: 1.27 g/cm³, etc.)
+- **Pricing Adjustments**: Review and update pricing quarterly based on filament costs and market rates
+- **Print Settings**: Tune default settings based on actual print performance data
+- **Build Volume**: Update if upgrading to different printer models
+
 ## Website
 
 This template includes a beautifully designed, production-ready front-end built with the [Next.js App Router](https://nextjs.org), served right alongside your Payload app in a instance. This makes it so that you can deploy both your backend and website where you need it.
@@ -236,7 +534,6 @@ Core features:
 - [TailwindCSS styling](https://tailwindcss.com/)
 - [shadcn/ui components](https://ui.shadcn.com/)
 - User Accounts and Authentication
-- Fully featured blog
 - Publication workflow
 - Dark mode
 - Pre-made layout building blocks
@@ -244,6 +541,7 @@ Core features:
 - Search
 - Live preview
 - Stripe payments
+- **3D Print File Upload System** (Phase 1)
 
 ### Cache
 

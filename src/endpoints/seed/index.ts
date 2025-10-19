@@ -88,20 +88,28 @@ export const seed = async ({
   payload.logger.info(`— Clearing collections and globals...`)
 
   // clear the database
-  await Promise.all(
-    globals.map((global) =>
-      payload.updateGlobal({
-        slug: global,
-        data: {
-          navItems: [],
-        },
-        depth: 0,
-        context: {
-          disableRevalidate: true,
-        },
-      }),
-    ),
-  )
+  await Promise.all([
+    payload.updateGlobal({
+      slug: 'header',
+      data: {
+        navItems: [],
+      },
+      depth: 0,
+      context: {
+        disableRevalidate: true,
+      },
+    }),
+    payload.updateGlobal({
+      slug: 'footer',
+      data: {
+        navItems: [],
+      },
+      depth: 0,
+      context: {
+        disableRevalidate: true,
+      },
+    }),
+  ])
 
   for (const collection of collections) {
     await payload.db.deleteMany({ collection, req, where: {} })
@@ -146,7 +154,7 @@ export const seed = async ({
     imageTshirtBlack,
     imageTshirtWhite,
     imageHero,
-    accessoriesCategory,
+    _accessoriesCategory,
     tshirtsCategory,
     hatsCategory,
   ] = await Promise.all([
@@ -179,7 +187,7 @@ export const seed = async ({
       data: imageHero1Data,
       file: heroBuffer,
     }),
-    categories.map((category) =>
+    ...categories.map((category) =>
       payload.create({
         collection: 'categories',
         data: {
