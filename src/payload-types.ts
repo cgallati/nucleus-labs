@@ -1060,6 +1060,10 @@ export interface PrintFile {
    * Estimated cost in USD
    */
   estimatedCost?: number | null;
+  /**
+   * Stripe Price ID for this print file
+   */
+  stripePriceId?: string | null;
   analysis?: {
     /**
      * Volume in cubic millimeters
@@ -1573,6 +1577,7 @@ export interface PrintFilesSelect<T extends boolean = true> {
   scanStatus?: T;
   analysisStatus?: T;
   estimatedCost?: T;
+  stripePriceId?: T;
   analysis?:
     | T
     | {

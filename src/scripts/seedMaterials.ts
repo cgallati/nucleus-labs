@@ -10,7 +10,7 @@ import configPromise from '@payload-config'
 const materialsData = [
   {
     name: 'PLA Basic',
-    type: 'pla',
+    type: 'pla' as const,
     density: 1.24, // g/cm³
     costPerKg: 16.99, // Cost per kilogram
     enabled: true,

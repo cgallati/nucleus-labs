@@ -31,6 +31,34 @@ export function FileUpload() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [addingToCart, setAddingToCart] = useState<Set<string>>(new Set())
+  const [recentFiles, setRecentFiles] = useState<any[]>([])
+  const [loadingRecent, setLoadingRecent] = useState(true)
+
+  // Fetch recent files in dev mode
+  useEffect(() => {
+    const isDev = process.env.NODE_ENV === 'development'
+    if (!isDev) {
+      setLoadingRecent(false)
+      return
+    }
+
+    const fetchRecentFiles = async () => {
+      try {
+        const response = await fetch('/api/print-files?limit=10&sort=-createdAt')
+        if (response.ok) {
+          const data = await response.json()
+          setRecentFiles(data.docs || [])
+        }
+      } catch (error) {
+        console.error('[FileUpload] Failed to fetch recent files:', error)
+      } finally {
+        setLoadingRecent(false)
+      }
+    }
+
+    fetchRecentFiles()
+  }, [])
 
   const validateFile = (file: File): string | null => {
     // Check file size
@@ -286,6 +314,46 @@ export function FileUpload() {
     )
   }, [])
 
+  const handleAddToCart = useCallback(async (fileId: string) => {
+    setAddingToCart((prev) => new Set(prev).add(fileId))
+
+    try {
+      const response = await fetch('/api/cart/add-print-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ printFileId: fileId }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to add to cart')
+      }
+
+      const data = await response.json()
+      console.log('[FileUpload] Added to cart:', data)
+
+      // Show success feedback
+      alert(`Added to cart! You now have ${data.itemsCount} item(s) in your cart.`)
+
+      // Remove the file from upload list after adding to cart
+      setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
+    } catch (error) {
+      console.error('[FileUpload] Error adding to cart:', error)
+      alert(error instanceof Error ? error.message : 'Failed to add to cart')
+    } finally {
+      setAddingToCart((prev) => {
+        const next = new Set(prev)
+        next.delete(fileId)
+        return next
+      })
+    }
+  }, [])
+
+  const handleUseRecentFile = useCallback((file: any) => {
+    // Add to cart directly since it already has material/color
+    handleAddToCart(file.id)
+  }, [handleAddToCart])
+
   return (
     <div className="max-w-4xl mx-auto">
       <h2 className="text-[#505050] text-[22px] font-normal mb-8">Upload Your 3D Print Files</h2>
@@ -473,7 +541,74 @@ export function FileUpload() {
                     onSelectionComplete={(material, color) => handleMaterialSelected(uploadedFile.id, material, color)}
                   />
                 )}
+
+                {/* Add to Cart Button - show after material selection */}
+                {uploadedFile.status === 'success' && uploadedFile.material && uploadedFile.color && (
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => handleAddToCart(uploadedFile.id)}
+                      disabled={addingToCart.has(uploadedFile.id)}
+                      className="bg-[#3a3a3a] hover:bg-[#505050] text-white rounded-[9px] px-8 h-[42px] text-[16px] font-normal disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {addingToCart.has(uploadedFile.id) ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Adding...
+                        </div>
+                      ) : (
+                        'Add to Cart'
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Files (Dev Mode Only) */}
+      {process.env.NODE_ENV === 'development' && !loadingRecent && recentFiles.length > 0 && (
+        <div className="mt-12 border-t border-[#e7e7e7] pt-8">
+          <h3 className="text-[#505050] text-[19px] font-normal mb-4">
+            Recent Uploads (Dev Shortcut)
+          </h3>
+          <p className="text-[#a0a0a0] text-[14px] mb-4">
+            Click to quickly add previously uploaded files to cart
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {recentFiles.slice(0, 6).map((file) => (
+              <button
+                key={file.id}
+                onClick={() => handleUseRecentFile(file)}
+                disabled={addingToCart.has(file.id) || !file.material || !file.color}
+                className="border-[1.9px] border-[#e7e7e7] rounded-[14px] p-4 text-left hover:border-[#3a3a3a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[#505050] text-[15px] font-normal truncate">
+                      {file.filename}
+                    </p>
+                    <p className="text-[#a0a0a0] text-[13px] mt-1">
+                      {file.material && file.color ? (
+                        <>
+                          {file.material} - {file.color}
+                        </>
+                      ) : (
+                        'No material selected'
+                      )}
+                    </p>
+                    {file.estimatedCost && (
+                      <p className="text-green-600 text-[13px] mt-1 font-medium">
+                        ${file.estimatedCost.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-[#a0a0a0] text-[12px] whitespace-nowrap">
+                    {new Date(file.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+              </button>
             ))}
           </div>
         </div>
@@ -486,14 +621,13 @@ export function FileUpload() {
           variant="outline"
           className="border-[#3a3a3a] border-[1.6px] text-[#3a3a3a] hover:bg-[#f5f5f5] rounded-[9px] px-8 h-[42px] text-[16px] font-normal"
         >
-          Back
+          Back to Home
         </Button>
         <Button
-          disabled={!hasSuccessfulUploads || isUploading || !allFilesHaveMaterial}
           onClick={() => router.push('/checkout')}
-          className="bg-[#3a3a3a] hover:bg-[#505050] text-white rounded-[9px] px-8 h-[42px] text-[16px] font-normal disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[#3a3a3a] hover:bg-[#505050] text-white rounded-[9px] px-8 h-[42px] text-[16px] font-normal"
         >
-          Continue to Checkout
+          View Cart & Checkout
         </Button>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { calculatePrintCost, estimatePrintTime } from '@/utilities/calculatePrin
 import NodeStl from 'node-stl'
 import fs from 'fs'
 import _path from 'path'
+import Stripe from 'stripe'
 
 interface AnalyzeFileInput {
   fileId: string
@@ -127,6 +128,41 @@ export const analyzeFileJob = async ({
       timeCost: costBreakdown.timeCost,
     })
 
+    // Create Stripe Price for this print file
+    let stripePriceId: string | undefined
+    if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRINT_SERVICE_PRODUCT_ID) {
+      try {
+        console.log('[Analysis Job] Creating Stripe Price...')
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+          apiVersion: '2025-08-27.basil',
+        })
+
+        // Create a Stripe Price for this specific print file
+        const price = await stripe.prices.create({
+          currency: 'usd',
+          unit_amount: Math.round(costBreakdown.total * 100), // Convert to cents
+          product: process.env.STRIPE_PRINT_SERVICE_PRODUCT_ID,
+          metadata: {
+            printFileId: fileId,
+            filename: filePath.split('/').pop() || 'unknown',
+          },
+        })
+
+        stripePriceId = price.id
+        console.log('[Analysis Job] Stripe Price created:', stripePriceId)
+      } catch (stripeError) {
+        console.error('[Analysis Job] Failed to create Stripe Price:', stripeError)
+        // Continue anyway - we can still save the file without Stripe Price
+      }
+    } else {
+      if (!process.env.STRIPE_SECRET_KEY) {
+        console.log('[Analysis Job] STRIPE_SECRET_KEY not set, skipping Stripe Price creation')
+      }
+      if (!process.env.STRIPE_PRINT_SERVICE_PRODUCT_ID) {
+        console.log('[Analysis Job] STRIPE_PRINT_SERVICE_PRODUCT_ID not set, skipping Stripe Price creation')
+      }
+    }
+
     // Update file with analysis results
     console.log('[Analysis Job] Updating file record with analysis results...')
     await payload.update({
@@ -136,6 +172,7 @@ export const analyzeFileJob = async ({
         analysisStatus: 'complete',
         scanStatus: 'clean', // File is safe to print
         estimatedCost: costBreakdown.total,
+        stripePriceId,
         analysis: {
           volume: analysis.volume,
           surfaceArea: analysis.surfaceArea,
@@ -150,10 +187,12 @@ export const analyzeFileJob = async ({
     console.log('[Analysis Job] Analysis completed successfully in', jobDuration, 'ms')
 
     return {
-      success: true,
-      analysis,
-      cost: costBreakdown,
-      exceedsBuildVolume,
+      output: {
+        success: true,
+        analysis,
+        cost: costBreakdown,
+        exceedsBuildVolume,
+      },
     }
   } catch (error) {
     const jobDuration = Date.now() - jobStartTime

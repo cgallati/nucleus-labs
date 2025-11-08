@@ -83,39 +83,44 @@ export const plugins: Plugin[] = [
           publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
           webhookSecret: process.env.STRIPE_WEBHOOKS_SIGNING_SECRET!,
           webhooks: {
-            'payment_intent.succeeded': ({ event, req, stripe }) => {
+            'payment_intent.succeeded': ({ event, req }) => {
+              const paymentIntent = event.data.object as { id: string; amount: number; currency: string }
               console.log('[Stripe Webhook] payment_intent.succeeded:', {
                 id: event.id,
-                paymentIntentId: event.data.object.id,
-                amount: event.data.object.amount,
-                currency: event.data.object.currency,
+                paymentIntentId: paymentIntent.id,
+                amount: paymentIntent.amount,
+                currency: paymentIntent.currency,
               })
               req.payload.logger.info('Payment intent succeeded')
             },
-            'payment_intent.created': ({ event, req }) => {
+            'payment_intent.created': ({ event }) => {
+              const paymentIntent = event.data.object as { id: string }
               console.log('[Stripe Webhook] payment_intent.created:', {
                 id: event.id,
-                paymentIntentId: event.data.object.id,
+                paymentIntentId: paymentIntent.id,
               })
             },
-            'charge.succeeded': ({ event, req }) => {
+            'charge.succeeded': ({ event }) => {
+              const charge = event.data.object as { id: string; amount: number }
               console.log('[Stripe Webhook] charge.succeeded:', {
                 id: event.id,
-                chargeId: event.data.object.id,
-                amount: event.data.object.amount,
+                chargeId: charge.id,
+                amount: charge.amount,
               })
             },
-            'charge.updated': ({ event, req }) => {
+            'charge.updated': ({ event }) => {
+              const charge = event.data.object as { id: string }
               console.log('[Stripe Webhook] charge.updated:', {
                 id: event.id,
-                chargeId: event.data.object.id,
+                chargeId: charge.id,
               })
             },
             'checkout.session.completed': ({ event, req }) => {
+              const session = event.data.object as { id: string; customer: string | null }
               console.log('[Stripe Webhook] checkout.session.completed:', {
                 id: event.id,
-                sessionId: event.data.object.id,
-                customerId: event.data.object.customer,
+                sessionId: session.id,
+                customerId: session.customer,
               })
               req.payload.logger.info('Checkout session completed')
             },

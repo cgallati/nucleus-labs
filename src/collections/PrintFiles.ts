@@ -147,6 +147,15 @@ export const PrintFiles: CollectionConfig = {
       },
     },
     {
+      name: 'stripePriceId',
+      type: 'text',
+      admin: {
+        description: 'Stripe Price ID for this print file',
+        condition: (data) => data.analysisStatus === 'complete',
+        readOnly: true,
+      },
+    },
+    {
       name: 'analysis',
       type: 'group',
       admin: {

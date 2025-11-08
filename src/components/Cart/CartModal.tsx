@@ -25,6 +25,7 @@ import { Product } from '@/payload-types'
 export function CartModal() {
   const { cart } = useCart()
   const [isOpen, setIsOpen] = useState(false)
+  const isComingSoonMode = process.env.NEXT_PUBLIC_COMING_SOON_MODE === 'true'
 
   const pathname = usePathname()
 
@@ -37,6 +38,11 @@ export function CartModal() {
     if (!cart || !cart.items || !cart.items.length) return undefined
     return cart.items.reduce((quantity, item) => (item.quantity || 0) + quantity, 0)
   }, [cart])
+
+  // Hide cart in coming soon mode
+  if (isComingSoonMode) {
+    return null
+  }
 
   return (
     <Sheet onOpenChange={setIsOpen} open={isOpen}>

@@ -4,6 +4,8 @@ import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
 import React from 'react'
 import { ConfirmOrder } from '@/components/checkout/ConfirmOrder'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ConfirmOrderPage() {
   return (
     <div className="container min-h-[90vh] flex py-12">

@@ -6,6 +6,19 @@ A professional 3D printing service platform built on Payload CMS and Next.js 15,
 
 This platform facilitates a complete 3D printing workflow from file upload to payment processing, serving SCAD students and the public with Bambu Labs X1C printing services.
 
+### Production Mode
+
+In production, the application displays a "Coming Soon" landing page at the root (`/`) with:
+- Professional branding and marketing copy highlighting Savannah, GA location
+- Feature highlights (fast turnaround, multiple materials, transparent pricing)
+- Clean, minimalist design optimized for Stripe verification
+
+**Production Restrictions:**
+- All public routes except `/`, `/admin`, and `/api/*` are disabled via middleware
+- Cart functionality is hidden in the header
+- Admin panel remains accessible at `/admin` for content management
+- This allows the site to be live for business verification while development continues
+
 Core features:
 
 - [Pre-configured Payload Config](#how-it-works)
@@ -662,6 +675,36 @@ To run Payload in production, you need to build and start the Admin panel. To do
 1. Invoke the `next build` script by running `pnpm build` or `npm run build` in your project root. This creates a `.next` directory with a production-ready admin bundle.
 1. Finally run `pnpm start` or `npm run start` to run Node in production and serve Payload from the `.build` directory.
 1. When you're ready to go live, see Deployment below for more details.
+
+### Production vs Development Modes
+
+The application supports two modes controlled by the `NEXT_PUBLIC_COMING_SOON_MODE` environment variable:
+
+**Coming Soon Mode** (`NEXT_PUBLIC_COMING_SOON_MODE=true`):
+- Displays custom "Coming Soon" landing page with Nucleus Labs branding
+- All routes except `/`, `/admin/*`, and `/api/*` are disabled via middleware (`src/middleware.ts`)
+- Cart is hidden from the header
+- Perfect for business verification (e.g., Stripe) while development continues
+
+**Full Feature Mode** (`NEXT_PUBLIC_COMING_SOON_MODE=false` or not set):
+- Full application functionality enabled
+- All routes accessible including `/new-order`, `/checkout`, etc.
+- Cart visible in header
+- Complete 3D printing workflow available
+
+To test coming soon mode locally:
+```bash
+# In .env
+NEXT_PUBLIC_COMING_SOON_MODE=true
+
+pnpm build && pnpm start
+```
+
+To enable full features in production:
+```bash
+# In your production environment (e.g., Vercel)
+NEXT_PUBLIC_COMING_SOON_MODE=false
+```
 
 ### Deploying to Vercel
 
