@@ -10,6 +10,10 @@ export const InitTheme: React.FC = () => {
       dangerouslySetInnerHTML={{
         __html: `
   (function () {
+    // FORCED LIGHT MODE: To restore dark mode functionality, uncomment the code below
+    // and comment out the line that forces 'light'
+
+    /*
     function getImplicitPreference() {
       var mediaQuery = '(prefers-color-scheme: dark)'
       var mql = window.matchMedia(mediaQuery)
@@ -38,6 +42,10 @@ export const InitTheme: React.FC = () => {
         themeToSet = implicitPreference
       }
     }
+    */
+
+    // Force light mode always
+    var themeToSet = 'light'
 
     document.documentElement.setAttribute('data-theme', themeToSet)
   })();

@@ -34,6 +34,10 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   }, [])
 
   useEffect(() => {
+    // FORCED LIGHT MODE: To restore dark mode functionality, uncomment the code below
+    // and comment out the forced light mode lines
+
+    /*
     let themeToSet: Theme = defaultTheme
     const preference = window.localStorage.getItem(themeLocalStorageKey)
 
@@ -47,6 +51,12 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
+    document.documentElement.setAttribute('data-theme', themeToSet)
+    setThemeState(themeToSet)
+    */
+
+    // Force light mode always
+    const themeToSet: Theme = 'light'
     document.documentElement.setAttribute('data-theme', themeToSet)
     setThemeState(themeToSet)
   }, [])
